@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ funding.title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {% if request.args.get("thank") %}
+                <p style="color:green; font-weight:bold;">
+                    💖 입금해주셔서 감사합니다!
+                </p>
+            {% endif %}
+
+
+            <!-- 상품 이미지 -->
+            <img src="/static/uploads/{{ funding.image }}" 
+                 class="img-fluid rounded mb-3">
+
+            <!-- 상품명 -->
+            <h3 class="mb-2">{{ funding.title }}</h3>
+
+            <!-- 판매 링크 -->
+            {% if funding.product_link %}
+            <a href="{{ funding.product_link }}" target="_blank" class="btn btn-outline-secondary btn-sm mb-3">
+                판매 페이지 보기
+            </a>
+            {% endif %}
+
+            <!-- 금액 정보 -->
+            <p class="mb-1">🎯 목표 금액: <strong>{{ funding.target_amount }}원</strong></p>
+            <p class="mb-1">💰 현재 금액: <strong>{{ total }}원</strong></p>
+            <p class="mb-3">⏳ 남은 금액: <strong>{{ remaining }}원</strong></p>
+
+            <!-- 프로그래스 바 -->
+            <div class="progress mb-4" style="height: 25px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                     style="width: {{ percent }}%;">
+                    {{ percent }}%
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">🏦 입금 계좌</h5>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold">{{ funding.bank }}</div>
+                        <div id="account" class="text-muted">{{ funding.account }}</div>
+                    </div>
+
+                    <button class="btn btn-outline-primary btn-sm"
+                            onclick="copyAccount()">
+                        복사
+                    </button>
+                    </div>
+                </div>
+            </div>
+
+
+            <script>
+            function copyAccount() {
+                const account = document.getElementById("account").innerText;
+                navigator.clipboard.writeText(account);
+                alert("계좌번호가 복사되었습니다!");
+                }
+            </script>
+
+
+            <!-- 입금 폼 -->
+            {% if total >= funding.target_amount %}
+                <div class="alert alert-success text-center">
+                    🎉 모집이 완료되었습니다. 감사합니다!
+                </div>
+            {% else %}
+                <h5 class="mb-3">💌 선물 금액 보내기</h5>
+                <form id="contributionForm">
+                    <div class="mb-2">
+                        <input type="text" name="name" class="form-control" placeholder="이름 (또는 익명)" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="number" name="amount" class="form-control" placeholder="금액 (원)" required>
+                    </div>
+                    <div class="mb-3">
+                        <textarea name="message" placeholder="메시지를 입력하세요 (선택사항)" row="3" class="form-control"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        입금 완료
+                    </button>
+                    <!-- 감사 모달 -->
+                    <div class="modal fade" id="thanksModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                        <div class="modal-body text-center">
+                            입금해주셔서 감사합니다 (●'◡'●)
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                            닫기
+                            </button>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+
+                </form>
+            {% endif %}
+            
+            {% if is_admin %}
+            <hr class="my-4">
+            <h5 class="mb-3"> 입금자 명단 </h5>
+
+            {% if contributions %}
+                <ul class="list-group">
+                    {% for c in contributions %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{c.name}}</strong> <br>
+                            <small class="text-muted">
+                                {{ c.created_at.strftime('%Y-%m-%d %H:%M')}}
+                            </small>
+                            {% if c.message %}
+                                <br> 💌 {{c.message}}
+                            {% endif %}
+                        </div>
+                        <span class="badge bg-primary rounded-pill">
+                            {{c.amount}} 원
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.getElementById("contributionForm").addEventListener("submit", function(e) {
+    e.preventDefault(); // 페이지 이동 막기
+
+    const formData = new FormData(this);
+
+    fetch(window.location.pathname + window.location.search, {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            const modal = new bootstrap.Modal(
+                document.getElementById("thanksModal")
+            );
+            modal.show();
+
+            this.reset(); // 폼 초기화
+        }
+        else if (data.status === "closed") {
+            alert("이미 모집이 완료되었습니다!");
+        }
+    });
+});
+</script>
+
