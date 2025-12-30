@@ -8,6 +8,8 @@ app = Flask(__name__)
 # 기본 설정
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///funding.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+UPLOAD_FOLDER = "static/uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = os.path.join(
     app.root_path, 'static/uploads'
 )
