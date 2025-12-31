@@ -1,12 +1,17 @@
 from flask import Flask, render_template, request, redirect, jsonify, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
 
 app = Flask(__name__)
 
 # 기본 설정
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///funding.db'
+DATABASE_URL = os.environ.get("DATABASE_URL")
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -29,6 +34,7 @@ class Funding(db.Model):
     admin_password = db.Column(db.String(100))
     bank = db.Column(db.String(100))
     account = db.Column(db.String(100))
+    link = db.Column(db.String(300))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Contribution(db.Model):
@@ -56,12 +62,16 @@ def create():
         target_amount = int(request.form["target_amount"])
         image_file = request.files["image"]
 
-        filename = image_file.filename
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        image_file.save(image_path)
+        filename = None
+
+        if image_file and image_file.filename !="":
+            filename = image_file.filename
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            image_file.save(image_path)
 
         bank = request.form["bank"]
         account = request.form["account"]
+        link = request.form["link"]
 
         admin_password = request.form["admin_password"]
 
@@ -72,7 +82,8 @@ def create():
             image=filename,
             account=account,
             bank = bank,
-            admin_password=admin_password
+            admin_password=admin_password,
+            link = link
         )
         db.session.add(funding)
         db.session.commit()
@@ -140,6 +151,6 @@ def funding(funding_id):
 # =====================
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
+    #with app.app_context():
+     #   db.create_all()
     app.run()
