@@ -29,7 +29,7 @@ class Funding(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100))
     product_link = db.Column(db.String(500))
-    image = db.Column(db.String(200))
+    image = db.Column(db.String(200), nullable=True)
     target_amount = db.Column(db.Integer)
     admin_password = db.Column(db.String(100))
     bank = db.Column(db.String(100))
