@@ -60,7 +60,7 @@ def create():
         title = request.form["title"]
         product_link = request.form["product_link"]
         target_amount = int(request.form["target_amount"])
-        image_file = request.files["image"]
+        image_file = request.files.get("image")
 
         filename = None
 
